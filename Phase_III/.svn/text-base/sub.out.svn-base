@@ -1,0 +1,13 @@
+-2
+
+CPU Time: 7
+Largest stack size: 0
+I/O Time in waitingQ: 72
+Waiting Time in readyQ: 61
+Turn around time: 140
+
+CPU idled for: 51 ticks.
+
+System Information: 
+	CPU Utilization: 92.18%
+	Throughput: 6.135 seconds

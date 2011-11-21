@@ -1,0 +1,39 @@
+0	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	
+ in loadmem page 0 V-I 1
+0	0	1	1	1	1	1	1	1	1	1	1	1	1	1	1	
+ in loadmem page 0 V-I 1
+simple1.s pc 0 limit 16 OP 0
+simple1.s pc 1 limit 16 OP 2
+simple1.s pc 2 limit 16 OP 2
+simple1.s pc 3 limit 16 OP 2
+simple1.s pc 4 limit 16 OP 2
+simple1.s pc 5 limit 16 OP 2
+simple1.s pc 6 limit 16 OP 2
+simple1.s pc 7 limit 16 OP 2
+simple1.s pc 8 limit 16 OP 2
+simple1.s pc 9 limit 16 OP 2
+simple1.s pc 10 limit 16 OP 2
+simple1.s pc 11 limit 16 OP 2
+simple1.s pc 12 limit 16 OP 2
+simple1.s pc 13 limit 16 OP 2
+simple1.s pc 14 limit 16 OP 2
+saved pc with 15
+simple1.s TIME UP
+simple2.s pc 16 limit 32 OP 0
+simple2.s pc 17 limit 32 OP 4
+simple2.s pc 18 limit 32 OP 4
+simple2.s pc 19 limit 32 OP 4
+simple2.s pc 20 limit 32 OP 4
+simple2.s pc 21 limit 32 OP 4
+simple2.s pc 22 limit 32 OP 4
+simple2.s pc 23 limit 32 OP 4
+simple2.s pc 24 limit 32 OP 4
+simple2.s pc 25 limit 32 OP 4
+simple2.s pc 26 limit 32 OP 4
+simple2.s pc 27 limit 32 OP 4
+simple2.s pc 28 limit 32 OP 4
+simple2.s pc 29 limit 32 OP 4
+simple2.s pc 30 limit 32 OP 4
+saved pc with 31
+simple2.s TIME UP
+simple1.s pc 15 limit 16 OP 2

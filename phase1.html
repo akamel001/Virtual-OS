@@ -1,0 +1,501 @@
+<html>
+<head> <title>CSCI 460 Project - Phase I</title> </head>
+<body>
+<H2>Project - Phase I: Assembler & Virtual Machine</H2>
+<H3>
+CSCI 460: Operating Systems
+<br>
+Spring 2009, Zemoudeh
+<br>
+Department of Computer Science and Engineering
+<br>
+California State University, San Bernardino
+</H3>
+
+<br>
+Write a C++ program
+to simulate a simple 16-bit CPU or Virtual Machine (VM)
+consisting of 4 general purpose
+registers (<tt>r[0]-r[3]</tt>) a program counter (<tt>pc</tt>),
+an instruction register (<tt>ir</tt>),
+a status register (<tt>sr</tt>), a stack pointer (<tt>sp</tt>),
+a <tt>clock</tt>, an arithmetic and logic unit (ALU),
+a 256 word memory (<tt>mem</tt>)
+with <tt>base</tt> and <tt>limit</tt> registers,
+ and a disk.
+
+<br>
+The registers are represented by a vector of 4 integers:
+
+<pre>                              vector&lt;int> r(4);</pre>
+
+<tt>mem</tt> is represented by a vector of 256 integers:
+
+<pre>                              vector&lt;int> mem(256);</pre>
+
+The least significant five bits of <tt>sr</tt> are reserved for
+OVERFLOW, LESS, EQUAL, GREATER, and CARRY
+status in that order, the rest are "don't care" (d):
+
+<br>
+<br>
+
+<table class="sample1">
+<tr>
+<th> &nbsp; d &nbsp; </th>
+<th> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; ... &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; </th>
+<th> &nbsp; d &nbsp; </th>
+<th> &nbsp; V &nbsp; </th>
+<th> &nbsp; L &nbsp; </th>
+<th> &nbsp; E &nbsp; </th>
+<th> &nbsp; G &nbsp; </th>
+<th> &nbsp; C &nbsp; </th>
+</tr>
+<tr>
+<td> 15  </td>
+<td>     </td>
+<td> &nbsp; 5  </td>
+<td> &nbsp; 4  </td>
+<td> &nbsp; 3  </td>
+<td> &nbsp; 2  </td>
+<td> &nbsp; 1  </td>
+<td> &nbsp; 0  </td>
+</tr>
+</table>
+
+<br>
+ALU is part of the logic of your program, disk
+can be represented by a
+collection of files, and the rest of the components
+can be represented by simple variables in your program.
+We only use the lower 16 bits of the variables.
+The VM supports two general formats for the instructions.
+
+<style type="text/css">
+table.sample1 {
+	border-width: 0px;
+	border-spacing: ;
+	border-style: outset;
+	border-color: gray;
+	border-collapse: collapse;
+	background-color: white;
+}
+table.sample1 th {
+	border-width: 1px;
+	padding: 1px;
+	border-style: inset;
+	border-color: gray;
+	background-color: white;
+	-moz-border-radius: ;
+}
+table.sample1 td {
+	border-width: 0px;
+	padding: 5px;
+	border-style: inset;
+	border-color: gray;
+	background-color: white;
+	-moz-border-radius: ;
+}
+</style>
+
+<br>
+<br>
+Format 1:
+<table class="sample1">
+<tr>
+<th> &nbsp; &nbsp; &nbsp; OP &nbsp; &nbsp; &nbsp; </th>
+<th> RD </th>
+<th> I </th>
+<th> RS </th>
+<th>  &nbsp; &nbsp; &nbsp; UNUSED &nbsp; &nbsp; &nbsp; &nbsp; </th>
+</tr>
+<tr>
+<td> &nbsp; &nbsp; &nbsp; 15:11 &nbsp; &nbsp; &nbsp; </td>
+<td> 10:9 </td>
+<td> 8 </td>
+<td> 7:6 </td>
+<td>  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 5:0 &nbsp; &nbsp; &nbsp; </td>
+</tr>
+</table>
+
+<br>
+Format 2:
+<table class="sample1">
+<tr>
+<th> &nbsp; &nbsp; &nbsp; OP &nbsp; &nbsp; &nbsp; </th>
+<th> RD </th>
+<th> I </th>
+<th> &nbsp; &nbsp; &nbsp; ADDR/CONST &nbsp; &nbsp; &nbsp; </th>
+</tr>
+<tr>
+<td> &nbsp; &nbsp; &nbsp; 15:11 &nbsp; &nbsp; &nbsp; </td>
+<td> 10:9 </td>
+<td> 8 </td>
+<td> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 7:0 &nbsp; &nbsp; &nbsp; </td>
+</tr>
+</table>
+
+<br>
+where OP (bits 11 to 15 from right to left) stands for opcode, RD (bits 9 and 10) stands for register-destination, I (bit 8) stands
+for immediate, and RS (bits 6 and 7) stands for register-source.
+When I is 0, the next 2 bits specify the source register and the next 6 bits
+are unused. When I is 1, immediate address mode is in effect:
+depending on the instruction, the next 8 bits are treated as either 
+an unsigned 8 bit address (ADDR), or
+an 8 bit two's complement constant (CONST).
+This implies 0 <= ADDR < 256 and
+and -128 <= CONST < 128.
+If a field is unused, it is considered don't care, and it can be set to
+any bit pattern. We will set don't cares to all zeros.
+<tt>load</tt> and <tt>loadi</tt> are special instructions, they both use format 2:
+when I = 0, we use ADDR, when I = 1, we use CONST.
+
+<style type="text/css">
+table.sample {
+	border-width: 1px;
+	border-spacing: ;
+	border-style: outset;
+	border-color: gray;
+	border-collapse: collapse;
+	background-color: white;
+}
+table.sample th {
+	border-width: 1px;
+	padding: 1px;
+	border-style: inset;
+	border-color: gray;
+	background-color: white;
+	-moz-border-radius: ;
+}
+table.sample td {
+	border-width: 1px;
+	padding: 5px;
+	border-style: inset;
+	border-color: gray;
+	background-color: white;
+	-moz-border-radius: ;
+}
+</style>
+
+<br>
+<br>
+To simplify writing programs for the VM, we need an assembly language
+and its corresponding assembler.
+The following table lists all the instructions supported by the
+assembler and the VM.
+<br>
+<br>
+<!--table border="1"-->
+<table class="sample">
+<tr> <th colspan="5">VM Instruction Table</tr>
+<tr> <th> OP <th> I <th> Instruction <th> Semantic in Pseudo C++ Syntax <th>Additional Action</tr>
+<tr><td>00000<td>0</td><td>        load RD ADDR</td><td>         r[RD] = mem[ADDR]</td><td>&nbsp;</td></tr>
+<tr><td>00000<td>1</td><td>        loadi RD CONST</td><td>r[RD] = CONST</td><td>&nbsp;</tr>
+<tr><td>00001<td>d</td><td>        store RD ADDR</td><td>        mem[ADDR] = r[RD]</td><td>&nbsp;</tr>
+<tr><td>00010<td>0</td><td>        add RD RS</td><td>        r[RD] = r[RD] + r[RS]</td><td>                Set CARRY</td></tr>
+<tr><td>00010<td>1</td><td>        addi RD CONST</td><td>        r[RD] = r[RD] + CONST</td><td>                Set CARRY</td></tr>
+<tr><td>00011<td>0</td><td>        addc RD RS</td><td>        r[RD] = r[RD] + r[RS] + CARRY</td><td>        Set CARRY</td></tr>
+<tr><td>00011<td>1</td><td>        addci RD CONST</td><td>        r[RD] = r[RD] + CONST + CARRY</td><td>        Set CARRY</td></tr>
+<tr><td>00100<td>0</td><td>        sub RD RS</td><td>        r[RD] = r[RD] - r[RS]</td><td>        Set CARRY</td></tr>
+<tr><td>00100<td>1</td><td>        subi RD CONST</td><td>        r[RD] = r[RD] - CONST</td><td>        Set CARRY</td></tr>
+<tr><td>00101<td>0</td><td>        subc RD RS</td><td>        r[RD] = r[RD] - r[RS] - CARRY</td><td> Set CARRY</td></tr>
+<tr><td>00101<td>1</td><td>        subci RD CONST</td><td>        r[RD] = r[RD] - CONST - CARRY</td><td> Set CARRY</td></tr>
+<tr><td>00110<td>0</td><td>        and RD RS</td><td>        r[RD] = r[RD] & r[RS]</td><td>&nbsp;</tr>
+<tr><td>00110<td>1</td><td>        andi RD CONST</td><td>        r[RD] = r[RD] & CONST</td><td>&nbsp;</tr>
+<tr><td>00111<td>0</td><td>        xor RD RS</td><td>        r[RD] = r[RD] ^ r[RS]</td><td>&nbsp;</tr>
+<tr><td>00111<td>1</td><td>        xori RD CONST</td><td>        r[RD] = r[RD] ^ CONST</td><td>&nbsp;</tr>
+<tr><td>01000<td>d</td><td>        compl RD</td><td>        r[RD] = ~ r[RD]</td><td>&nbsp;</tr>
+<tr><td>01001<td>d</td><td>        shl RD</td><td>        r[RD] = r[RD] << 1, shift-in-bit = 0</td><td> Set CARRY</td></tr>
+<tr><td>01010<td>d</td><td>        shla RD</td><td>        shl arithmetic </td><td> Set CARRY & Sign Extend</td></tr>
+<tr><td>01011<td>d</td><td>        shr RD</td><td>        r[RD] = r[RD] >> 1, shift-in-bit = 0</td><td> Set CARRY</td></tr>
+<tr><td>01100<td>d</td><td>        shra RD</td><td>        shr arithmetic </td><td> Set CARRY & Sign Extend</td></tr>
+<tr><td>01101<td>0<td>		compr RD RS<td>        if r[RD] < r[RS] set LESS reset EQUAL and GREATER; 
+<br>
+if r[RD] == r[RS] set EQUAL reset LESS and GREATER;
+<br>
+if r[RD] > r[RS] set GREATER reset EQUAL and LESS<td>&nbsp;</tr>
+<tr><td>01101<td>1</td><td>        compri RD CONST &nbsp;</td><td> if r[RD] < CONST set LESS reset EQUAL and GREATER; ...</td><td>&nbsp;</tr>
+<tr><td>01110<td>d</td><td>        getstat RD</td><td>        r[RD] = SR</td><td>&nbsp;</tr>
+<tr><td>01111<td>d</td><td>        putstat RD</td><td>        SR = r[RD]</td><td>&nbsp;</tr>
+<tr><td>10000<td>d</td><td>        jump  ADDR</td><td>        pc = ADDR</td><td>&nbsp;</tr>
+<tr><td>10001<td>d</td><td>        jumpl ADDR</td><td>        if LESS == 1, pc = ADDR, else do nothing</td><td>&nbsp;</tr>
+<tr><td>10010<td>d</td><td>        jumpe ADDR</td><td>         if EQUAL == 1, pc = ADDR, else do nothing</td><td>&nbsp;</tr>
+<tr><td>10011<td>d</td><td>        jumpg ADDR</td><td>         if GREATER == 1, pc = ADDR, else do nothing</td><td>&nbsp;</tr>
+<tr><td>10100<td>d</td><td>        call ADDR</td><td>        push VM status; pc = ADDR</td><td>&nbsp;</tr>
+<tr><td>10101<td>d</td><td>        return</td><td>        pop and restore VM status</td><td>&nbsp;</tr>
+<tr><td>10110<td>d</td><td>        read RD</td><td>        read new content of r[RD] from .in file</td><td>&nbsp;</tr>
+<tr><td>10111<td>d</td><td>        write RD</td><td>        write r[RD] into .out file</td><td>&nbsp;</tr>
+<tr><td>11000<td>d</td><td>        halt</td><td>                halt execution</td><td>&nbsp;</tr>
+<tr><td>11001<td>d</td><td>        noop</td><td>                no operation</td><td>&nbsp;</tr>
+</table>
+
+
+<br>
+Since <tt>mem</tt> consist of a set of integers (bits), any 
+program written in the above language has to be translated to its equivalent 
+object code to be loaded in <tt>mem</tt> and run by the VM.
+Write an assembler for the above assembly language.
+For example, when the assembler encounters
+
+<pre>                              loadi 2 71</pre>
+
+it translates the instruction to
+
+<pre>                              0000010101000111</pre>
+
+where
+from left to right 00000 represents loadi or load, 10 represents r[2], I == 1
+(therefore loadi is the opcode),
+and 01000111 is the CONST. 
+1351 is the object code for this instruction, since
+
+0000010101000111<sub>2</sub> = 1351<sub>10</sub>.
+
+As an example, your assembler should produce the following 
+object code on the right for the
+assembly program on the left.
+This program does not perform anything meaningful!
+It is intended to compare some related instructions.
+Note you may comment the rest of a line using an exclamation point (!).
+Your assembler should ignore comments.
+
+<br>
+<br>
+<table border="0">
+<tr><th>Assembly Prog <th>Object Prog</tr>
+<tr><td>        load 1 69 <td> 581</tr>
+<tr><td>        load 2 69 <td> 1093</tr>
+<tr><td>        loadi 2 -123 ! set register 2 <td>        1413</tr>
+<tr><td>        loadi 2 71 <td> 1351</tr>
+<tr><td>        add 0 3 <td> 4288</tr>
+<tr><td>        addi 0 -56 <td> 4552</tr>
+<tr><td>        jump 10 &nbsp; &nbsp; &nbsp; ! produces runtime error &nbsp; &nbsp; <td>      32778</tr>
+<tr><td>        halt <td> 49152</tr>
+</table>
+
+<br>
+<br>
+The assembler reads an assembly program and outputs its 
+corresponding object code.
+Any assembly program must have a <tt>.s</tt> suffix.
+Its corresponding object code must have the same name with a <tt>.o</tt> suffix.
+The assembler should create the <tt>.o</tt> file, and the VM should read in the <tt>.o</tt>
+file, store it in memory, and start executing it.
+The assembler should catch any out-of-range error for ADDR and
+CONST and stop producing object code. Also any value other than 0, 1, 2, or 3
+for RD or RS is illegal; and
+any opcode other than the ones listed in the above VM Instruction Table 
+is illegal.
+The assembler should be designed and implemented as a C++ class.
+
+<br>
+<br>
+Next, design and implement a C++ class called VM to interpret
+the object codes.
+Store the
+object code to be run in the top of the memory, this implies 
+setting <tt>pc</tt> and <tt>base</tt> registers to 0 and <tt>limit</tt> register
+to the size of the object program.
+The VM then enters an infinite loop of instruction fetch-execute cycle:
+
+<br>
+<br>
+<table border="0">
+<tr><td>TOP: <td> &nbsp; instruction fetch (ir &larr; mem[pc])</tr>
+<tr><td><td> &nbsp; pc++</tr>
+<tr><td><td> &nbsp; set OP, RD, I, RS, ADDR, CONST from ir</tr>
+<tr><td><td> &nbsp; execute the instruction specified by OP and I</tr>
+<tr><td><td> &nbsp; go to TOP</tr>
+</table>
+
+<br>
+This loop terminates when a halt instruction is executed or some unexpected
+error occurs.
+Following the above file suffix convention, when executing a <tt>.o</tt>
+program and a
+read instruction is encountered, the input is read from a <tt>.in</tt> file
+with the same name.
+In case of a write instruction the output is printed into a <tt>.out</tt> file.
+
+<br>
+<br>
+The <tt>clock</tt> is initialized to 0,
+load and store instructions take 4 clock ticks each,
+read and write instructions take 28 clock ticks each,
+and the rest of the instructions take 1 clock tick each.
+Note that <tt>loadi</tt>, which is the set instruction and uses 
+an immediate operand, takes 1 clock tick and not 4 ticks as it does not access memory.
+print the final value of the clock in the <tt>.out</tt> file.
+
+<br>
+<br>
+Be careful in handling sign extension. For example, if in <tt>loadi</tt> instruction
+CONST = 11111100<sub>2</sub> = -4<sub>10</sub>, then to store it in some r[RD] register,
+it must be sign extended to
+1111111111111100<sub>2</sub> (still -4<sub>10</sub>).
+Sign extension occurs every time a short constant (in this case 8 bits)
+is assigned to a longer register (in this case 16 bits); look for
+this every time negative numbers are involved.
+
+<br>
+<br>
+<tt>call</tt> and <tt>return</tt> instructions need special attention.
+As part of the execution of the <tt>call</tt> instruction
+the status of the VM must be pushed on to the stack.
+The status of the VM consist of <tt>pc, r[0]-r[3],</tt> and <tt>sr.</tt> 
+The stack grows from bottom of memory up, therefore initially <tt>sp = 256.</tt>
+After a call, <tt>sp</tt> is decremented by 6 as the values of 
+<tt>pc, r[0]-r[3],</tt> and <tt>sr</tt> in the VM are pushed on to the stack.
+When a <tt>return</tt> instruction is executed, <tt>sp</tt> is incremented by 6
+as the new values of
+<tt>pc, r[0]-r[3],</tt> and <tt>sr</tt> are popped from the stack and restored in
+the VM.
+When <tt>sp > 250</tt>  stack is empty, and when  
+<tt>sp < limit+6</tt> stack is full.
+
+<br>
+<br>
+<tt>noop</tt> instruction can be used as a place holder in the memory,
+for example, to store a temporary value in memory
+and later retrieve it. Use <tt>noop</tt> instructions either at the beginning
+or at the end of the program; do not use them in the middle unless
+there is a very good reason.
+
+<br>
+<br>
+You should write your Assembler, VM, and OS
+in as much as possible in an object oriented and extensible fashion!
+This is specially the case as
+new requirements are added from one phase to the next.
+Use separate compilation for this (large) project.
+This means the class <tt>Assembler</tt> must be defined in files:
+<pre>
+	Assembler.h
+	Assembler.cpp
+</pre>
+and the class <tt>VirtualMachine</tt> must be defined in files:
+<pre>
+	VirtualMachine.h
+	VirtualMachine.cpp
+</pre>
+Compile 
+<tt>Assembler.cpp</tt> and
+<tt>VirtualMachine.cpp</tt> separately using the <tt>-c</tt> option:
+<pre>
+	$ g++ -c Assembler.cpp
+	$ g++ -c VirtualMachine.cpp
+</pre>
+These two commands produce
+<tt>Assembler.o</tt> and <tt>VirtualMachine.o</tt>.
+<br>
+<tt>os.cpp</tt> includes: 
+<pre>
+	main()
+	#include "Assembler.h"
+	#include "VirtualMachine.h"
+</pre>
+where <tt>main()</tt> declares instances of
+<tt>Assembler</tt> and
+<tt>VirtualMachine</tt> and makes the proper calls:
+<pre>
+        ...
+        #include "Assembler.h"
+        #include "VirtualMachine.h"
+        ...
+        main(int argc, char *argv[])
+        {
+                Assembler as;
+                VirtualMachine vm;
+                ...
+        } // main
+</pre>
+
+
+Compile and link to make your rudimentary OS (rudimentary only at this phase!):
+
+<pre>
+	$ g++ -o os os.cpp Assembler.o VirtualMachine.o</pre>
+
+
+and run <tt>prog.s</tt> in your OS environment:
+
+<pre>
+	$ os prog.s</pre>
+
+which assembles <tt>prog.s</tt> into <tt>prog.o</tt>, loads <tt>prog.o</tt> into memory, and finally invokes the virtual machine to run the program. 
+<br>
+Make sure that your program works correctly for the following <tt>test.s</tt> program:
+
+<pre>
+        read  0
+        loadi 1 -2
+        add   0 1      ! subtract 2 from value read
+        write 0
+        halt
+</pre>
+
+
+and also for the following <tt>fact.s</tt> program:
+
+<pre>
+! main for factorial program
+        loadi  0 1     ! line 0, R0 = fact(R1)
+        read   1       ! input R1
+        call   6       ! call fact
+        load   0 33    ! receive result of fact
+        write  0
+        halt
+! fact function
+        compri 1 1     ! line 6
+        jumpe  14      ! jump over the recursive call to fact if
+        jumpl  14      ! R1 is less than or equal 1
+        call   16      ! call mult (R0 = R0 * R1)
+        load   0 34    ! receive result of mult
+        subi   1 1     ! decrement multiplier (R1) and multiply again
+        call   6       ! call fact
+        load   0 33
+        store  0 33    ! line 14, return R0 (result of fact)
+        return
+! mult function
+        loadi  2 8     ! line 16, init R2 (counter)
+        loadi  3 0     ! init R3 (result of mult)
+        shr    1       ! line 18 (loop), shift right multiplier set CARRY
+        store  2 35    ! save counter
+        getstat 2      ! to find CARRY's value        
+        andi   2 1
+        compri 2 1
+        jumpe  25      ! if CARRY==1 add
+        jump   26      ! otherwise do nothing
+        add    3 0
+        shl    0       ! make multiplicand ready for next add
+        load   2 35    ! restore counter
+        subi   2 1     ! decrement counter        
+        compri 2 0     ! if counter > 0 jump to loop
+        jumpg  18
+        store  3 34    ! return R3 (result of mult)
+        return
+        noop           ! line 33, fact return value
+        noop           ! line 34, mult return value
+        noop           ! line 35, mult counter
+</pre>
+
+On the due date hand in print-outs of: 
+<pre>
+	Assembler.h
+	Assembler.cpp
+	VirtualMachine.h
+	VirtualMachine.cpp
+	os.cpp
+</pre>
+and demonstrate your program for the above assembly programs.
+Your grade will be based on:
+<br>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 40% correctness and efficiency,
+<br>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 20% clarity and conciseness,
+<br>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 20% documentation and proper indentation, and
+<br>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 20% "object oriented-ness" and extensibility.
+</body>
+</html>

@@ -1,0 +1,143 @@
+<HTML>
+<head> <title>CSCI 460 Project - Phase III</title> </head>
+<BODY >
+
+<H2>Project - Phase III: Memory Management</H2>
+<H3>
+CSCI 460: Operating Systems
+<br>
+Spring 2009, Zemoudeh
+<br>
+Department of Computer Science and Engineering
+<br>
+California State University, San Bernardino
+</H3>
+
+<br>
+
+<P>
+In this phase we will add the memory management layer to our toy OS.
+We will implement demand-paging. Let us fix the page size to be 
+16 words, therefore there are 16 frames in our 256 word memory.
+Each entry in the page table
+consists of the frame number and the valid/invalid bit.
+We will use two page replacement algorithms, FIFO and LRU.
+When a page-fault occurs, the offending process is placed
+in the wait queue with the trap completion time set to 40 clock ticks later.
+After the page fault has been serviced, that is 40 or more clock ticks
+has passed, the process is moved to the ready queue and the new page is 
+loaded in the memory.
+In addition to the information gathered in the second phase, for each process compute:
+<br>
+Number of Page-faults
+<br>
+and
+<br>
+Hit Ratio
+
+<P>
+Hit Ratio is the percentage of non-page fault memory references.
+
+<P>
+You will need to add a Translation Look-aside Buffer (TLB) to the Virtual Machine.
+Without a TLB, every memory reference results in a trap to the OS because the OS maintains the page tables.
+This is clearly an unrealistic situation.
+
+<P>
+Inclusion of the TLB will also simplify the OS. 
+Every time there is a memory reference, 
+if it could be found in the TLB it is handled
+in the hardware and it takes 4 time units; 
+otherwise, it results in a trap to the OS.
+Every time a new process takes over the Virtual Machine (hardware) it copies its page table
+content onto the TLB as part of the context switch process.
+
+<P>
+By the same token, the OS doesn't want to check the validity 
+of <code>pc</code> every time it is incremented.
+At any time, <code>base</code> and <code>limit</code> registers
+point to the currently executing page, and the hardware makes sure that the
+value of <code>pc</code> is bound by them. Whenever <code>pc</code> goes out of bound and the new page
+is not already in TLB, then an OS trap is generated. 
+If the page is already in TLB, the values of
+<code>base</code> and <code>limit</code> registers are updated 
+to point to the new page and the process will continue without a page fault.
+Of course all of this happens within the Virtual Machine.
+
+<P>
+To support LRU, add 16 registers to the Virtual Machine, one per frame.
+These frame registers can be represented by a vector of integers.
+Each time a frame is accessed, the hardware saves the current time in its corresponding
+register. OS accesses frame registers to perform the LRU page
+replacement algorithm. Note that FIFO doesn't need such registers.
+FIFO can be done entirely in the OS. 
+This is because the time a page is brought into
+the memory can be recorded by the OS in its own (software) vector 
+(of registers). But since our hardware already contains "frame registers" for LRU,
+we make FIFO use these hardware registers as well.
+
+<P>
+Run your OS twice, each time with a different
+page replacement algorithm but for the same set of programs.
+This way the merits of the two algorithms can be compared.
+Use <code>seekp()</code> to replace a page in the <code>.o</code> file which serves as the
+simulated disk. Note that
+you don't need to replace a page if its corresponding frame has not been
+modified.
+As far as stack is concerned, it takes up as many pages as necessary in
+high memory. Memory locations taken up by stack
+will not be available for paging purposes. If the
+stack grows too large trying
+to overwrite an allocated frame, that frame has to move out
+(and replaced on disk if needed) before the stack can grow any larger.
+
+<P>
+Let us fix degree of multiprogramming at 5; only 5 PCBs
+are in either ready queue, wait queue, or CPU at a time.
+When the OS starts, 
+<br> it assembles all the <code>.s</code> files to their corresponding
+<code>.o</code> files,
+<br>
+loads in the first page of the first 5 <code>.o</code> files into memory,
+<br>
+sets up their PCBs in ready queue, 
+<br>
+sets up their page tables,
+<br>
+and start executing the first process.
+
+<P>
+As the
+processes are executed, more pages are brought in based on the availability
+of frames and the requests of the processes.
+Only when a process terminates a new process is added to the system to
+maintain a degree of multiprogramming 5.
+Note that in this phase we need to add "Page Fault" as a new condition for context switch in addition
+to the conditions enumerated in Phase II.
+
+<P>
+Add two more <code>.s</code> programs: <a href="addVector.s"><code>addVector.s</code></a> and <a href="subVector.s"><code>subVector.s</code></a>
+to the list of programs from Phase II for a total of 8 programs.
+The input files for these programs are  <a href="addVector.in"><code>addVector.in</code></a> and <a href="subVector.in"><code>subVector.in</code></a> respectively.
+
+<P>
+Since the <code>ls</code> command lists files in alphabetical order,
+the order in which the programs are brought in is as follows:
+<code>addVector.s</code>,
+<code>fact1.s</code>,
+<code>fact2.s</code>,
+<code>io.s</code>,
+<code>sub.s</code>,
+<code>subVector.s</code>,
+<code>sum1.s</code>, and
+<code>sum2.s</code>.
+
+<P>
+Demonstrate your program and
+hand in printouts of your source code
+and all <code>.out</code> files
+for each page replacement algorithm.
+The same grading criteria as Phase I and II holds.
+
+</BODY>
+</HTML>
